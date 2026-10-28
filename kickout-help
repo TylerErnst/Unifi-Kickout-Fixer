@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "Kickout log query examples:"
+echo
+echo "Last 24 hours (count per MAC):"
+echo "awk -F',' -v d=\"\$(date -u -d '1 day ago' '+%Y-%m-%d %H:%M:%S')\" 'NR>1 && \$1 >= d {count[\$3]++} END {for (m in count) printf \"%4d  %s\\n\", count[m], m}' /var/log/kickouts.csv | sort -nr"
+echo
+echo "Last 7 days:"
+echo "awk -F',' -v d=\"\$(date -u -d '7 days ago' '+%Y-%m-%d %H:%M:%S')\" 'NR>1 && \$1 >= d {count[\$3]++} END {for (m in count) printf \"%4d  %s\\n\", count[m], m}' /var/log/kickouts.csv | sort -nr"
+echo
+echo "Raw events for a MAC:"
+echo "grep '34:46:63:20:49:59' /var/log/kickouts.csv"

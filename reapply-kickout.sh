@@ -1,9 +1,9 @@
 #!/bin/bash
-# Re-apply Qualcomm sta_kickout fix on UniFi U7/E7 APs
+# Re-apply sta_kickout=320 on UniFi U7/E7 APs
 
 SSH_USER="OSNXVb0Va96J"
 SSH_KEY="/root/.ssh/unifi_ap"
-APS=("192.168.1.77")
+APS=("192.168.1.251")
 
 for ap in "${APS[@]}"; do
   echo "Applying to $ap..."

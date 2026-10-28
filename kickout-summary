@@ -1,0 +1,55 @@
+#!/bin/bash
+CSV="/var/log/kickouts.csv"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+echo -e "${CYAN}"
+cat << 'ART'
+ _   _       _  __ _   _  ___      _               _     _____ _                 
+| | | |_ __ (_)/ _(_) | |/ (_) ___| | _____  _   _| |_  |  ___(_)_  _____ _ __ 
+| | | | '_ \| | |_| | | ' /| |/ __| |/ / _ \| | | | __| | |_  | \ \/ / _ \ '__|
+| |_| | | | | |  _| | | . \| | (__|   < (_) | |_| | |_  |  _| | |>  <  __/ |   
+ \___/|_| |_|_|_| |_| |_|\_\_|\___|_|\_\___/ \__,_|\__| |_|   |_/_/\_\___|_|   
+ART
+echo -e "${NC}"
+
+if [ ! -f "$CSV" ]; then
+  echo -e "${YELLOW}No kickout log yet.${NC}"
+  exit 0
+fi
+
+echo -e "${BOLD}${GREEN}=== Last 24 hours (drops per device) ===${NC}"
+awk -F',' -v d="$(date -u -d '1 day ago' '+%Y-%m-%d %H:%M:%S')" \
+  'NR>1 && $1 >= d {count[$3]++} END {for (m in count) printf "%4d  %s\n", count[m], m}' \
+  "$CSV" | sort -nr | head -8 | while read -r count mac; do
+    if [ "$count" -ge 20 ]; then
+      echo -e "  ${RED}${BOLD}${count}${NC} drops   ${mac}"
+    elif [ "$count" -ge 5 ]; then
+      echo -e "  ${YELLOW}${BOLD}${count}${NC} drops   ${mac}"
+    else
+      echo -e "  ${GREEN}${count}${NC} drops   ${mac}"
+    fi
+  done
+
+echo
+echo -e "${BOLD}${CYAN}=== Last 7 days (drops per device) ===${NC}"
+awk -F',' -v d="$(date -u -d '7 days ago' '+%Y-%m-%d %H:%M:%S')" \
+  'NR>1 && $1 >= d {count[$3]++} END {for (m in count) printf "%4d  %s\n", count[m], m}' \
+  "$CSV" | sort -nr | head -8 | while read -r count mac; do
+    if [ "$count" -ge 50 ]; then
+      echo -e "  ${RED}${BOLD}${count}${NC} drops   ${mac}"
+    elif [ "$count" -ge 15 ]; then
+      echo -e "  ${YELLOW}${BOLD}${count}${NC} drops   ${mac}"
+    else
+      echo -e "  ${GREEN}${count}${NC} drops   ${mac}"
+    fi
+  done
+
+echo
+echo -e "${BOLD}Schedule:${NC} on boot + every 15 minutes"
