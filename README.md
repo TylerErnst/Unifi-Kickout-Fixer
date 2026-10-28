@@ -14,9 +14,10 @@ This container re-applies the fix on boot and every 15 minutes, and logs kickout
 |------|---------|
 | `reapply-kickout.sh` | Applies `sta_kickout 320` to all radios via SSH |
 | `log-kickouts.sh` | Pulls unique kickout events from AP `dmesg` into CSV |
-| `kickout-summary` | Login summary with drop counts and colored output |
+| `kickout-summary` | Login summary with aligned drop counts and device names |
 | `kickout-help` | Shows example `awk` queries for the CSV log |
-| `motd` / `.bashrc` snippet | Interactive login prompt |
+| `bashrc-snippet.sh` | Interactive all-letter login prompt (f/l/s/h/r/w/a) |
+| `kickout-names.txt` | Optional MAC → friendly name mapping |
 
 ## Quick setup
 
@@ -24,7 +25,8 @@ This container re-applies the fix on boot and every 15 minutes, and logs kickout
 2. Copy the scripts to `/usr/local/bin/` and `chmod +x` them.
 3. Set up SSH key auth to your APs.
 4. Edit the `APS` array in the scripts with your AP IPs.
-5. Add the cron jobs and `.bashrc` prompt block.
+5. Optionally edit `/etc/kickout-names.txt` for device names.
+6. Add the cron jobs and append `bashrc-snippet.sh` to `/root/.bashrc`.
 
 ## Cron
 
@@ -38,4 +40,5 @@ This container re-applies the fix on boot and every 15 minutes, and logs kickout
 
 - The fix is applied per-radio (`wifi0`–`wifi3`).
 - CSV log is at `/var/log/kickouts.csv` (deduplicated by dmesg timestamp).
+- Drop counts are right-aligned for readability.
 - See `kickout-help` for query examples.

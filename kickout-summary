@@ -1,13 +1,35 @@
 #!/bin/bash
 CSV="/var/log/kickouts.csv"
+NAMES="/etc/kickout-names.txt"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-BLUE='\033[0;34m'
-BOLD='\033[1m'
-NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
+
+lookup_name() {
+  local mac="$1"
+  if [ -f "$NAMES" ]; then
+    grep -i "^$mac" "$NAMES" | awk '{$1=""; print substr($0,2)}' | head -1
+  fi
+}
+
+print_section() {
+  local title="$1" since="$2" red_thresh="$3" yellow_thresh="$4"
+  echo -e "${BOLD}${CYAN}${title}${NC}"
+  awk -F',' -v d="$(date -u -d "$since" '+%Y-%m-%d %H:%M:%S')" \
+    'NR>1 && $1 >= d {count[$3]++} END {for (m in count) printf "%d %s\n", count[m], m}' \
+    "$CSV" | sort -nr | head -8 | while read -r count mac; do
+      name=$(lookup_name "$mac")
+      [ -n "$name" ] && display="$mac  ($name)" || display="$mac"
+      if [ "$count" -ge "$red_thresh" ]; then
+        printf "  ${RED}${BOLD}%5d${NC} drops   %s\n" "$count" "$display"
+      elif [ "$count" -ge "$yellow_thresh" ]; then
+        printf "  ${YELLOW}${BOLD}%5d${NC} drops   %s\n" "$count" "$display"
+      else
+        printf "  ${GREEN}%5d${NC} drops   %s\n" "$count" "$display"
+      fi
+    done
+  echo
+}
 
 echo -e "${CYAN}"
 cat << 'ART'
@@ -19,37 +41,9 @@ cat << 'ART'
 ART
 echo -e "${NC}"
 
-if [ ! -f "$CSV" ]; then
-  echo -e "${YELLOW}No kickout log yet.${NC}"
-  exit 0
-fi
+[ -f "$CSV" ] || { echo "No kickout log yet."; exit 0; }
 
-echo -e "${BOLD}${GREEN}=== Last 24 hours (drops per device) ===${NC}"
-awk -F',' -v d="$(date -u -d '1 day ago' '+%Y-%m-%d %H:%M:%S')" \
-  'NR>1 && $1 >= d {count[$3]++} END {for (m in count) printf "%4d  %s\n", count[m], m}' \
-  "$CSV" | sort -nr | head -8 | while read -r count mac; do
-    if [ "$count" -ge 20 ]; then
-      echo -e "  ${RED}${BOLD}${count}${NC} drops   ${mac}"
-    elif [ "$count" -ge 5 ]; then
-      echo -e "  ${YELLOW}${BOLD}${count}${NC} drops   ${mac}"
-    else
-      echo -e "  ${GREEN}${count}${NC} drops   ${mac}"
-    fi
-  done
+print_section "Last 24 hours" "1 day ago" 20 5
+print_section "Last 7 days" "7 days ago" 50 15
 
-echo
-echo -e "${BOLD}${CYAN}=== Last 7 days (drops per device) ===${NC}"
-awk -F',' -v d="$(date -u -d '7 days ago' '+%Y-%m-%d %H:%M:%S')" \
-  'NR>1 && $1 >= d {count[$3]++} END {for (m in count) printf "%4d  %s\n", count[m], m}' \
-  "$CSV" | sort -nr | head -8 | while read -r count mac; do
-    if [ "$count" -ge 50 ]; then
-      echo -e "  ${RED}${BOLD}${count}${NC} drops   ${mac}"
-    elif [ "$count" -ge 15 ]; then
-      echo -e "  ${YELLOW}${BOLD}${count}${NC} drops   ${mac}"
-    else
-      echo -e "  ${GREEN}${count}${NC} drops   ${mac}"
-    fi
-  done
-
-echo
 echo -e "${BOLD}Schedule:${NC} on boot + every 15 minutes"
