@@ -27,10 +27,30 @@ if [ -t 0 ] && [ -z "$KICKOUT_PROMPT_DONE" ]; then
     echo
     read -p "$(echo -e ${BOLD}Choice:${NC}) " ans
     case "$ans" in
-      f|F) /usr/local/bin/reapply-kickout.sh ;;
-      l|L) tail -20 /var/log/kickout-fix.log ;;
-      s|S) crontab -l ;;
-      h|H) kickout-help ;;
+      f|F)
+        /usr/local/bin/reapply-kickout.sh
+        echo
+        read -n 1 -p "Press any key to return..."
+        show_prompt
+        ;;
+      l|L)
+        tail -20 /var/log/kickout-fix.log
+        echo
+        read -n 1 -p "Press any key to return..."
+        show_prompt
+        ;;
+      s|S)
+        crontab -l
+        echo
+        read -n 1 -p "Press any key to return..."
+        show_prompt
+        ;;
+      h|H)
+        kickout-help
+        echo
+        read -n 1 -p "Press any key to return..."
+        show_prompt
+        ;;
       u|U)
         /usr/local/bin/update-kickout-names
         echo
@@ -61,7 +81,7 @@ if [ -t 0 ] && [ -z "$KICKOUT_PROMPT_DONE" ]; then
         echo "It also logs kickout events to /var/log/kickouts.csv so you can see which"
         echo "devices are being dropped and how often."
         echo
-        read -p "Press Enter to return..."
+        read -n 1 -p "Press any key to return..."
         show_prompt
         ;;
       *) ;;

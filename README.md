@@ -42,5 +42,6 @@ This container re-applies the fix on boot and every 15 minutes, and logs kickout
 - The fix is applied per-radio (`wifi0`–`wifi3`).
 - CSV log is at `/var/log/kickouts.csv` (deduplicated by dmesg timestamp).
 - Drop counts are right-aligned for readability.
-- Press `u` in the menu to auto-add new MACs and edit names in nano.
+- Menu options pause and return to the prompt (no re-login needed).
+- Press `u` to auto-add new MACs and edit names in nano.
 - See `kickout-help` for query examples.
