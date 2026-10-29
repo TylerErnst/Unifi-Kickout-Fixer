@@ -74,8 +74,9 @@ cat << 'ART'
 ART
 echo -e "${NC}"
 
-print_section "Drops — last 24 hours" "1 day ago" 20 5 5
-print_section "Drops — last 7 days" "7 days ago" 50 15 5
+LIMIT="${1:-5}"
+print_section "Drops — last 24 hours" "1 day ago" 20 5 "$LIMIT"
+print_section "Drops — last 7 days" "7 days ago" 50 15 "$LIMIT"
 
 echo -ne "${BOLD}Fix:${NC}     "
 if [ "$has_reboot" -eq 1 ] && [ -n "$fix_interval" ]; then

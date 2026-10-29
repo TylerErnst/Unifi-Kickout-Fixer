@@ -78,7 +78,7 @@ if [ -t 0 ] && [ -z "$KICKOUT_PROMPT_DONE" ]; then
       w|W)
         while true; do
           clear
-          /usr/local/bin/kickout-summary
+          /usr/local/bin/kickout-summary 50
           echo -e "\n${YELLOW}Auto-refreshing every 30s — press any key to stop${NC}"
           read -t 30 -n 1 && break
         done
