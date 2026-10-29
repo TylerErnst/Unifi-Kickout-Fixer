@@ -15,6 +15,22 @@ lookup_name() {
 print_section() {
   local title="$1" since="$2" red_thresh="$3" yellow_thresh="$4"
   echo -e "${BOLD}${CYAN}${title}${NC}"
+
+  # Check if we have any data for this window
+  local count
+  count=$(awk -F',' -v d="$(date -u -d "$since" '+%Y-%m-%d %H:%M:%S')" \
+    'NR>1 && $1 >= d {c++} END {print c+0}' "$CSV" 2>/dev/null || echo 0)
+
+  if [ "$count" -eq 0 ]; then
+    if [ -n "$log_interval" ]; then
+      echo -e "  ${YELLOW}logging enabled, no drops yet${NC}"
+    else
+      echo -e "  ${RED}logging not configured${NC}"
+    fi
+    echo
+    return
+  fi
+
   awk -F',' -v d="$(date -u -d "$since" '+%Y-%m-%d %H:%M:%S')" \
     'NR>1 && $1 >= d {count[$3]++} END {for (m in count) printf "%d %s\n", count[m], m}' \
     "$CSV" | sort -nr | head -8 | while read -r count mac; do
@@ -52,10 +68,8 @@ cat << 'ART'
 ART
 echo -e "${NC}"
 
-[ -f "$CSV" ] || { echo "No kickout log yet."; exit 0; }
-
-print_section "Last 24 hours" "1 day ago" 20 5
-print_section "Last 7 days" "7 days ago" 50 15
+print_section "Drops — last 24 hours" "1 day ago" 20 5
+print_section "Drops — last 7 days" "7 days ago" 50 15
 
 echo -ne "${BOLD}Fix:${NC}     "
 if [ "$has_reboot" -eq 1 ] && [ -n "$fix_interval" ]; then
