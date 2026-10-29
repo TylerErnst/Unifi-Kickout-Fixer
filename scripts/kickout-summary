@@ -13,10 +13,9 @@ lookup_name() {
 }
 
 print_section() {
-  local title="$1" since="$2" red_thresh="$3" yellow_thresh="$4"
+  local title="$1" since="$2" red_thresh="$3" yellow_thresh="$4" limit="${5:-5}"
   echo -e "${BOLD}${CYAN}${title}${NC}"
 
-  # Check if we have any data for this window
   local count
   count=$(awk -F',' -v d="$(date -u -d "$since" '+%Y-%m-%d %H:%M:%S')" \
     'NR>1 && $1 >= d {c++} END {print c+0}' "$CSV" 2>/dev/null || echo 0)
@@ -25,7 +24,7 @@ print_section() {
     if [ -n "$log_interval" ]; then
       echo -e "  ${YELLOW}logging enabled, no drops yet${NC}"
     else
-      echo -e "  ${RED}logging not configured${NC}"
+      echo -e "  ${RED}logging not configured${NC}  ${CYAN}(press k to set up)${NC}"
     fi
     echo
     return
@@ -33,7 +32,7 @@ print_section() {
 
   awk -F',' -v d="$(date -u -d "$since" '+%Y-%m-%d %H:%M:%S')" \
     'NR>1 && $1 >= d {count[$3]++} END {for (m in count) printf "%d %s\n", count[m], m}' \
-    "$CSV" | sort -nr | head -8 | while read -r count mac; do
+    "$CSV" | sort -nr | head -"$limit" | while read -r count mac; do
       name=$(lookup_name "$mac")
       [ -n "$name" ] && display="$mac  ($name)" || display="$mac"
       if [ "$count" -ge "$red_thresh" ]; then
@@ -44,6 +43,13 @@ print_section() {
         printf "  ${GREEN}%5d${NC} drops   %s\n" "$count" "$display"
       fi
     done
+
+  local total
+  total=$(awk -F',' -v d="$(date -u -d "$since" '+%Y-%m-%d %H:%M:%S')" \
+    'NR>1 && $1 >= d {macs[$3]=1} END {print length(macs)}' "$CSV" 2>/dev/null || echo 0)
+  if [ "$total" -gt "$limit" ]; then
+    echo -e "  ${CYAN}… and $((total - limit)) more  (press w to see all)${NC}"
+  fi
   echo
 }
 
@@ -68,8 +74,8 @@ cat << 'ART'
 ART
 echo -e "${NC}"
 
-print_section "Drops — last 24 hours" "1 day ago" 20 5
-print_section "Drops — last 7 days" "7 days ago" 50 15
+print_section "Drops — last 24 hours" "1 day ago" 20 5 5
+print_section "Drops — last 7 days" "7 days ago" 50 15 5
 
 echo -ne "${BOLD}Fix:${NC}     "
 if [ "$has_reboot" -eq 1 ] && [ -n "$fix_interval" ]; then
@@ -79,12 +85,12 @@ elif [ "$has_reboot" -eq 1 ]; then
 elif [ -n "$fix_interval" ]; then
   echo -e "${YELLOW}every ${fix_interval} minutes only${NC}"
 else
-  echo -e "${RED}not configured${NC}"
+  echo -e "${RED}not configured${NC}  ${CYAN}(press k)${NC}"
 fi
 
 echo -ne "${BOLD}Logging:${NC} "
 if [ -n "$log_interval" ]; then
   echo -e "${GREEN}every ${log_interval} minutes${NC}"
 else
-  echo -e "${RED}not configured${NC}"
+  echo -e "${RED}not configured${NC}  ${CYAN}(press k)${NC}"
 fi
