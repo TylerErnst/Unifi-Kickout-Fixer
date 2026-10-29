@@ -18,6 +18,7 @@ if [ -t 0 ] && [ -z "$KICKOUT_PROMPT_DONE" ]; then
     echo -e "  ${CYAN}f${NC}) ${YELLOW}run the fix now${NC}          ${CYAN}/usr/local/bin/reapply-kickout.sh${NC}"
     echo -e "  ${CYAN}l${NC}) ${YELLOW}view recent fix runs${NC}     ${CYAN}tail -20 /var/log/kickout-fix.log${NC}"
     echo -e "  ${CYAN}s${NC}) ${YELLOW}show schedule${NC}            ${CYAN}crontab -l${NC}"
+    echo -e "  ${CYAN}k${NC}) ${YELLOW}edit cron jobs${NC}           ${CYAN}crontab -e${NC}"
     echo -e "  ${CYAN}h${NC}) ${YELLOW}log query examples${NC}       ${CYAN}kickout-help${NC}"
     echo -e "  ${CYAN}u${NC}) ${YELLOW}update device names${NC}      ${CYAN}update-kickout-names${NC}"
     echo -e "  ${CYAN}c${NC}) ${YELLOW}edit AP list${NC}             ${CYAN}/etc/kickout-aps.txt${NC}"
@@ -44,6 +45,17 @@ if [ -t 0 ] && [ -z "$KICKOUT_PROMPT_DONE" ]; then
         crontab -l
         echo
         read -n 1 -p "Press any key to return..."
+        show_prompt
+        ;;
+      k|K)
+        echo
+        echo -e "${BOLD}Recommended cron entries:${NC}"
+        echo "  @reboot sleep 30 && /usr/local/bin/reapply-kickout.sh"
+        echo "  */15 * * * * /usr/local/bin/reapply-kickout.sh"
+        echo "  */15 * * * * /usr/local/bin/log-kickouts.sh"
+        echo
+        read -n 1 -p "Press any key to open crontab..."
+        crontab -e
         show_prompt
         ;;
       h|H)
