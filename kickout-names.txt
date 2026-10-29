@@ -1,4 +1,0 @@
-# MAC to friendly name mapping
-# Format: MAC  Name
-34:46:63:20:49:59  Weak Client
-# aa:bb:cc:dd:ee:ff  Another Device

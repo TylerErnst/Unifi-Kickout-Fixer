@@ -1,0 +1,3 @@
+# Example MAC → name map — copy to /etc/kickout-names.txt and edit
+# Format: MAC  Name
+34:46:63:20:49:59  Weak Client

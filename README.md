@@ -8,40 +8,48 @@ Some UniFi U7/E7 APs kick clients due to an overly aggressive `sta_kickout` thre
 
 This container re-applies the fix on boot and every 15 minutes, and logs kickout events for analysis.
 
-## Files
+## Repository layout
 
-| File | Purpose |
-|------|---------|
-| `reapply-kickout.sh` | Applies `sta_kickout 320` to all radios via SSH |
-| `log-kickouts.sh` | Pulls unique kickout events from AP `dmesg` into CSV |
-| `kickout-summary` | Login summary with aligned drop counts and device names |
-| `kickout-help` | Shows example `awk` queries for the CSV log |
-| `update-kickout-names` | Auto-adds MACs from the last 7 days to the names file |
-| `bashrc-snippet.sh` | Interactive all-letter login prompt (f/l/s/h/u/r/w/a) |
-| `kickout-names.txt` | Optional MAC → friendly name mapping |
+```
+scripts/          → install to /usr/local/bin/
+config/           → copy examples to /etc/
+etc/              → append bashrc-snippet.sh to /root/.bashrc
+```
 
 ## Quick setup
 
-1. Create a minimal Debian LXC (or VM) on Proxmox.
-2. Copy the scripts to `/usr/local/bin/` and `chmod +x` them.
-3. Set up SSH key auth to your APs.
-4. Edit the `APS` array in the scripts with your AP IPs.
-5. Optionally edit `/etc/kickout-names.txt` for device names.
-6. Add the cron jobs and append `bashrc-snippet.sh` to `/root/.bashrc`.
+```bash
+# 1. Copy scripts
+cp scripts/* /usr/local/bin/
+chmod +x /usr/local/bin/*
 
-## Cron
+# 2. Create config
+cp config/kickout-aps.txt.example /etc/kickout-aps.txt
+cp config/kickout-names.txt.example /etc/kickout-names.txt
+nano /etc/kickout-aps.txt   # add your APs
 
-```cron
-@reboot sleep 30 && /usr/local/bin/reapply-kickout.sh
-*/15 * * * * /usr/local/bin/reapply-kickout.sh
-*/15 * * * * /usr/local/bin/log-kickouts.sh
+# 3. Add login prompt
+cat etc/bashrc-snippet.sh >> /root/.bashrc
+
+# 4. Cron
+crontab -e
+# add:
+# @reboot sleep 30 && /usr/local/bin/reapply-kickout.sh
+# */15 * * * * /usr/local/bin/reapply-kickout.sh
+# */15 * * * * /usr/local/bin/log-kickouts.sh
+```
+
+## Config format
+
+`/etc/kickout-aps.txt` — one line per AP:
+
+```
+OSNXVb0Va96J 192.168.1.251
 ```
 
 ## Notes
 
-- The fix is applied per-radio (`wifi0`–`wifi3`).
-- CSV log is at `/var/log/kickouts.csv` (deduplicated by dmesg timestamp).
-- Drop counts are right-aligned for readability.
-- Menu options pause and return to the prompt (no re-login needed).
-- Press `u` to auto-add new MACs and edit names in nano.
-- See `kickout-help` for query examples.
+- SSH key expected at `/root/.ssh/unifi_ap`.
+- CSV log: `/var/log/kickouts.csv` (deduplicated).
+- Menu options return to the prompt (no re-login needed).
+- Press `u` to auto-add MACs and edit names; `c` to edit the AP list.
