@@ -31,6 +31,17 @@ print_section() {
   echo
 }
 
+# Check cron
+cron=$(crontab -l 2>/dev/null || true)
+has_reboot=0
+echo "$cron" | grep -q "@reboot.*reapply-kickout" && has_reboot=1
+
+get_interval() {
+  echo "$cron" | grep -E "^\*/[0-9]+.*$1" | head -1 | grep -oE '\*/[0-9]+' | tr -d '*/' || true
+}
+fix_interval=$(get_interval "reapply-kickout")
+log_interval=$(get_interval "log-kickouts")
+
 echo -e "${CYAN}"
 cat << 'ART'
  _   _       _  __ _   _  ___      _               _     _____ _                 
@@ -46,4 +57,20 @@ echo -e "${NC}"
 print_section "Last 24 hours" "1 day ago" 20 5
 print_section "Last 7 days" "7 days ago" 50 15
 
-echo -e "${BOLD}Schedule:${NC} on boot + every 15 minutes"
+echo -ne "${BOLD}Fix:${NC}     "
+if [ "$has_reboot" -eq 1 ] && [ -n "$fix_interval" ]; then
+  echo -e "${GREEN}on boot + every ${fix_interval} minutes${NC}"
+elif [ "$has_reboot" -eq 1 ]; then
+  echo -e "${YELLOW}on boot only${NC}"
+elif [ -n "$fix_interval" ]; then
+  echo -e "${YELLOW}every ${fix_interval} minutes only${NC}"
+else
+  echo -e "${RED}not configured${NC}"
+fi
+
+echo -ne "${BOLD}Logging:${NC} "
+if [ -n "$log_interval" ]; then
+  echo -e "${GREEN}every ${log_interval} minutes${NC}"
+else
+  echo -e "${RED}not configured${NC}"
+fi
