@@ -19,6 +19,7 @@ if [ -t 0 ] && [ -z "$KICKOUT_PROMPT_DONE" ]; then
     echo -e "  ${CYAN}l${NC}) ${YELLOW}view recent fix runs${NC}     ${CYAN}tail -20 /var/log/kickout-fix.log${NC}"
     echo -e "  ${CYAN}s${NC}) ${YELLOW}show schedule${NC}            ${CYAN}crontab -l${NC}"
     echo -e "  ${CYAN}h${NC}) ${YELLOW}log query examples${NC}       ${CYAN}kickout-help${NC}"
+    echo -e "  ${CYAN}u${NC}) ${YELLOW}update device names${NC}      ${CYAN}update-kickout-names${NC}"
     echo -e "  ${CYAN}r${NC}) ${YELLOW}refresh${NC}"
     echo -e "  ${CYAN}w${NC}) ${YELLOW}watch (auto-refresh)${NC}"
     echo -e "  ${CYAN}a${NC}) ${YELLOW}about this system${NC}"
@@ -30,6 +31,12 @@ if [ -t 0 ] && [ -z "$KICKOUT_PROMPT_DONE" ]; then
       l|L) tail -20 /var/log/kickout-fix.log ;;
       s|S) crontab -l ;;
       h|H) kickout-help ;;
+      u|U)
+        /usr/local/bin/update-kickout-names
+        echo
+        nano /etc/kickout-names.txt
+        show_prompt
+        ;;
       r|R) show_prompt ;;
       w|W)
         while true; do

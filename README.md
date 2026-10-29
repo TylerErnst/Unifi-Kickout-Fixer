@@ -16,7 +16,8 @@ This container re-applies the fix on boot and every 15 minutes, and logs kickout
 | `log-kickouts.sh` | Pulls unique kickout events from AP `dmesg` into CSV |
 | `kickout-summary` | Login summary with aligned drop counts and device names |
 | `kickout-help` | Shows example `awk` queries for the CSV log |
-| `bashrc-snippet.sh` | Interactive all-letter login prompt (f/l/s/h/r/w/a) |
+| `update-kickout-names` | Auto-adds MACs from the last 7 days to the names file |
+| `bashrc-snippet.sh` | Interactive all-letter login prompt (f/l/s/h/u/r/w/a) |
 | `kickout-names.txt` | Optional MAC → friendly name mapping |
 
 ## Quick setup
@@ -41,4 +42,5 @@ This container re-applies the fix on boot and every 15 minutes, and logs kickout
 - The fix is applied per-radio (`wifi0`–`wifi3`).
 - CSV log is at `/var/log/kickouts.csv` (deduplicated by dmesg timestamp).
 - Drop counts are right-aligned for readability.
+- Press `u` in the menu to auto-add new MACs and edit names in nano.
 - See `kickout-help` for query examples.

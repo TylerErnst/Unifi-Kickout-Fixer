@@ -1,0 +1,16 @@
+#!/bin/bash
+# Auto-add MACs from the last 7 days to the names file
+
+CSV="/var/log/kickouts.csv"
+NAMES="/etc/kickout-names.txt"
+
+[ -f "$CSV" ] || exit 0
+touch "$NAMES"
+
+awk -F',' -v d="$(date -u -d '7 days ago' '+%Y-%m-%d %H:%M:%S')" \
+  'NR>1 && $1 >= d {print $3}' "$CSV" | sort -u | while read -r mac; do
+  if ! grep -qi "^$mac" "$NAMES"; then
+    echo "$mac  (unnamed)" >> "$NAMES"
+    echo "Added: $mac"
+  fi
+done
