@@ -24,7 +24,7 @@ print_section() {
     if [ -n "$log_interval" ]; then
       echo -e "  ${YELLOW}logging enabled, no drops yet${NC}"
     else
-      echo -e "  ${RED}logging not configured${NC}  ${CYAN}(press k to set up)${NC}"
+      echo -e "  ${RED}logging not configured${NC}  ${CYAN}(press c)${NC}"
     fi
     echo
     return
@@ -53,7 +53,6 @@ print_section() {
   echo
 }
 
-# Check cron
 cron=$(crontab -l 2>/dev/null || true)
 has_reboot=0
 echo "$cron" | grep -q "@reboot.*reapply-kickout" && has_reboot=1
@@ -78,20 +77,22 @@ LIMIT="${1:-5}"
 print_section "Drops — last 24 hours" "1 day ago" 20 5 "$LIMIT"
 print_section "Drops — last 7 days" "7 days ago" 50 15 "$LIMIT"
 
-echo -ne "${BOLD}Fix:${NC}     "
-if [ "$has_reboot" -eq 1 ] && [ -n "$fix_interval" ]; then
-  echo -e "${GREEN}on boot + every ${fix_interval} minutes${NC}"
-elif [ "$has_reboot" -eq 1 ]; then
-  echo -e "${YELLOW}on boot only${NC}"
-elif [ -n "$fix_interval" ]; then
-  echo -e "${YELLOW}every ${fix_interval} minutes only${NC}"
-else
-  echo -e "${RED}not configured${NC}  ${CYAN}(press k)${NC}"
-fi
+if [ -z "$1" ]; then
+  echo -ne "${BOLD}Fix:${NC}     "
+  if [ "$has_reboot" -eq 1 ] && [ -n "$fix_interval" ]; then
+    echo -e "${GREEN}on boot + every ${fix_interval} minutes${NC}"
+  elif [ "$has_reboot" -eq 1 ]; then
+    echo -e "${YELLOW}on boot only${NC}"
+  elif [ -n "$fix_interval" ]; then
+    echo -e "${YELLOW}every ${fix_interval} minutes only${NC}"
+  else
+    echo -e "${RED}not configured${NC}  ${CYAN}(press c)${NC}"
+  fi
 
-echo -ne "${BOLD}Logging:${NC} "
-if [ -n "$log_interval" ]; then
-  echo -e "${GREEN}every ${log_interval} minutes${NC}"
-else
-  echo -e "${RED}not configured${NC}  ${CYAN}(press k)${NC}"
+  echo -ne "${BOLD}Logging:${NC} "
+  if [ -n "$log_interval" ]; then
+    echo -e "${GREEN}every ${log_interval} minutes${NC}"
+  else
+    echo -e "${RED}not configured${NC}  ${CYAN}(press c)${NC}"
+  fi
 fi
