@@ -8,6 +8,8 @@ Some UniFi U7/E7 APs kick clients due to an overly aggressive `sta_kickout` thre
 
 This container re-applies the fix on boot and every 15 minutes, and logs kickout events for analysis.
 
+Firmware version 8.8.14 is not recommended as it does not process this fix, it is recommended to downgrade to 8.7.11 or wait for a version that fixes this issue. 
+
 ## Repository layout
 
 ```
