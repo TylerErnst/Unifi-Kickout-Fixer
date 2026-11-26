@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pull unique kickout events from APs into CSV
-# Reads APs from /etc/kickout-aps.txt (format: username IP)
+# Survives AP reboots by tracking boot time
 
 SSH_KEY="/root/.ssh/unifi_ap"
 CONFIG="/etc/kickout-aps.txt"
@@ -11,29 +11,58 @@ STATE="/var/log/kickouts.state"
 [ -f "$CSV" ] || echo "timestamp,ap_ip,mac,reason,dmesg_ts" > "$CSV"
 
 declare -A LAST_TS
-[ -f "$STATE" ] && while IFS='=' read -r ap ts; do LAST_TS["$ap"]="$ts"; done < "$STATE"
+declare -A LAST_BOOT
+
+# Load previous state (format: ip=ts|boot)
+if [ -f "$STATE" ]; then
+  while IFS='=' read -r ap rest; do
+    ts="${rest%%|*}"
+    boot="${rest#*|}"
+    LAST_TS["$ap"]="$ts"
+    LAST_BOOT["$ap"]="$boot"
+  done < "$STATE"
+fi
 
 while read -r user ip; do
   [ -z "$user" ] || [ -z "$ip" ] && continue
-  last="${LAST_TS[$ip]:-0}"
-  max_ts="$last"
+
+  # Get current boot time from the AP (seconds since epoch)
+  boot=$(ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+           "$user@$ip" 'date -d "$(uptime -s)" +%s' 2>/dev/null)
+  [ -z "$boot" ] && continue
+
+  last_ts="${LAST_TS[$ip]:-0}"
+  last_boot="${LAST_BOOT[$ip]:-0}"
+
+  # If the AP rebooted, reset the timestamp watermark
+  if [ "$boot" != "$last_boot" ]; then
+    last_ts=0
+  fi
+
+  max_ts="$last_ts"
 
   while IFS= read -r line; do
     dmesg_ts=$(echo "$line" | sed -n 's/^\[\([0-9.]*\)\].*/\1/p')
-    if awk -v a="$dmesg_ts" -v b="$last" 'BEGIN { exit !(a > b) }'; then
+    if awk -v a="$dmesg_ts" -v b="$last_ts" 'BEGIN { exit !(a > b) }'; then
       mac=$(echo "$line" | grep -oE '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}' | head -1)
       reason=$(echo "$line" | sed -n 's/.*reason: \(.*\), associd.*/\1/p')
       ts=$(date -u +"%Y-%m-%d %H:%M:%S")
       if [ -n "$mac" ] && [ -n "$dmesg_ts" ]; then
         echo "$ts,$ip,$mac,\"$reason\",$dmesg_ts" >> "$CSV"
-        awk -v a="$dmesg_ts" -v b="$max_ts" 'BEGIN { exit !(a > b) }' && max_ts="$dmesg_ts"
+        if awk -v a="$dmesg_ts" -v b="$max_ts" 'BEGIN { exit !(a > b) }'; then
+          max_ts="$dmesg_ts"
+        fi
       fi
     fi
   done < <(ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
              "$user@$ip" "dmesg | grep -i 'ol_peer_sta_kickout_event_handler'" 2>/dev/null)
 
   LAST_TS["$ip"]="$max_ts"
+  LAST_BOOT["$ip"]="$boot"
 done < "$CONFIG"
 
+# Write state back
 : > "$STATE"
-for ap in "${!LAST_TS[@]}"; do echo "$ap=${LAST_TS[$ap]}" >> "$STATE"; done
+for ap in "${!LAST_TS[@]}"; do
+  echo "$ap=${LAST_TS[$ap]}|${LAST_BOOT[$ap]}" >> "$STATE"
+done
