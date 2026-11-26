@@ -24,11 +24,12 @@ if [ -f "$STATE" ]; then
 fi
 
 while read -r user ip; do
-  [ -z "$user" ] || [ -z "$ip" ] && continue
+  # Skip blank lines and comments
+  [[ -z "$user" || "$user" =~ ^# || -z "$ip" ]] && continue
 
-  # Get current boot time from the AP (seconds since epoch)
-  boot=$(ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
-           "$user@$ip" 'date -d "$(uptime -s)" +%s' 2>/dev/null)
+  # Get current boot time from the AP (seconds since epoch via /proc/stat btime)
+  boot=$(ssh -n -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 \
+           "$user@$ip" "awk '/btime/ {print \$2}' /proc/stat" 2>/dev/null)
   [ -z "$boot" ] && continue
 
   last_ts="${LAST_TS[$ip]:-0}"
@@ -54,7 +55,7 @@ while read -r user ip; do
         fi
       fi
     fi
-  done < <(ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+  done < <(ssh -n -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 \
              "$user@$ip" "dmesg | grep -i 'ol_peer_sta_kickout_event_handler'" 2>/dev/null)
 
   LAST_TS["$ip"]="$max_ts"

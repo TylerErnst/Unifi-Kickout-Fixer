@@ -16,7 +16,7 @@ Firmware version 8.8.14 is not recommended as it does not process this fix, it i
 setup.sh          → run this for guided install
 scripts/          → install to /usr/local/bin/
 config/           → copy examples to /etc/
-etc/              → append bashrc-snippet.sh to /root/.bashrc
+etc/              → bashrc-snippet.sh and logrotate config
 ```
 
 ## Quick setup
@@ -29,10 +29,11 @@ sudo ./setup.sh
 
 The wizard will:
 1. Install the scripts to `/usr/local/bin/`
-2. Ask for each controller’s SSH username, then its AP IPs
-3. Generate an SSH key (if needed) and tell you where to paste it in UniFi
-4. Add the interactive login menu to `/root/.bashrc`
-5. Optionally install the cron jobs
+2. Install the logrotate config
+3. Ask for each controller’s SSH username, then its AP IPs
+4. Generate an SSH key (if needed) and tell you where to paste it in UniFi
+5. Add the interactive login menu to `/root/.bashrc`
+6. Optionally install the cron jobs
 
 Leave the username blank to finish adding controllers.
 
@@ -43,6 +44,7 @@ cp scripts/* /usr/local/bin/
 chmod +x /usr/local/bin/*
 cp config/kickout-aps.txt.example /etc/kickout-aps.txt
 cp config/kickout-names.txt.example /etc/kickout-names.txt
+cp etc/logrotate-unifi-kickout /etc/logrotate.d/unifi-kickout
 nano /etc/kickout-aps.txt
 cat etc/bashrc-snippet.sh >> /root/.bashrc
 ```
@@ -79,12 +81,15 @@ The username is the Device SSH username from the UniFi controller that manages t
 | `scripts/kickout-help` | Example log queries |
 | `scripts/update-kickout-names` | Auto-adds MACs from the last 7 days |
 | `etc/bashrc-snippet.sh` | Interactive menu (append to `.bashrc`) |
+| `etc/logrotate-unifi-kickout` | Log rotation for CSV and fix logs |
 | `config/*.example` | Example config files |
 
 ## Notes
 
 - SSH key expected at `/root/.ssh/unifi_ap`.
 - CSV log: `/var/log/kickouts.csv` (deduplicated by dmesg timestamp).
+- Fix log: `/var/log/kickout-fix.log`.
+- Logs are rotated monthly (6 copies) via the logrotate config.
 - Menu options return to the prompt (no re-login needed).
 - Press `u` to auto-add MACs and edit names; `c` to edit the AP list.
 - Device names are optional (`/etc/kickout-names.txt`).

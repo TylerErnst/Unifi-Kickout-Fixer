@@ -1,0 +1,7 @@
+/var/log/kickouts.csv /var/log/kickout-fix.log {
+    monthly
+    rotate 6
+    compress
+    missingok
+    notifempty
+}

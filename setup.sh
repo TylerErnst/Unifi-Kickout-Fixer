@@ -15,7 +15,7 @@ echo "and set up SSH access."
 echo
 
 # 1. Install scripts
-echo "[1/5] Installing scripts to /usr/local/bin/..."
+echo "[1/6] Installing scripts to /usr/local/bin/..."
 cp "$REPO_DIR/scripts/"* /usr/local/bin/
 chmod +x /usr/local/bin/reapply-kickout.sh \
          /usr/local/bin/log-kickouts.sh \
@@ -24,16 +24,27 @@ chmod +x /usr/local/bin/reapply-kickout.sh \
          /usr/local/bin/update-kickout-names
 echo "      Done."
 
-# 2. Config files
+# 2. Logrotate
 echo
-echo "[2/5] Setting up config files..."
+echo "[2/6] Installing logrotate config..."
+if [ -f "$REPO_DIR/etc/logrotate-unifi-kickout" ]; then
+  cp "$REPO_DIR/etc/logrotate-unifi-kickout" /etc/logrotate.d/unifi-kickout
+  chown root:root /etc/logrotate.d/unifi-kickout
+  echo "      Done."
+else
+  echo "      Skipped (logrotate-unifi-kickout not found)."
+fi
+
+# 3. Config files
+echo
+echo "[3/6] Setting up config files..."
 [ -f /etc/kickout-aps.txt ] || cp "$REPO_DIR/config/kickout-aps.txt.example" /etc/kickout-aps.txt
 [ -f /etc/kickout-names.txt ] || cp "$REPO_DIR/config/kickout-names.txt.example" /etc/kickout-names.txt
 echo "      Done."
 
-# 3. AP list — multi-controller
+# 4. AP list — multi-controller
 echo
-echo "[3/5] Configure your Access Points"
+echo "[4/6] Configure your Access Points"
 echo
 echo "UniFi uses one SSH username per controller."
 echo "Find it in: UniFi Devices → Device Updates and Settings → Device SSH Settings"
@@ -65,9 +76,9 @@ if [ ! -s /etc/kickout-aps.txt ]; then
   echo "  No APs configured. You can edit /etc/kickout-aps.txt later."
 fi
 
-# 4. SSH key
+# 5. SSH key
 echo
-echo "[4/5] SSH Key Setup"
+echo "[5/6] SSH Key Setup"
 echo
 if [ ! -f /root/.ssh/unifi_ap ]; then
   echo "No SSH key found. Generating one..."
@@ -95,9 +106,9 @@ else
   echo
 fi
 
-# 5. bashrc snippet
+# 6. bashrc snippet
 echo
-echo "[5/5] Login prompt"
+echo "[6/6] Login prompt"
 if ! grep -q "KICKOUT_PROMPT_DONE" /root/.bashrc 2>/dev/null; then
   echo "Adding interactive menu to /root/.bashrc..."
   cat "$REPO_DIR/etc/bashrc-snippet.sh" >> /root/.bashrc
@@ -106,7 +117,7 @@ else
   echo "Login prompt already present in .bashrc"
 fi
 
-# 6. Cron
+# 7. Cron
 echo
 echo "────────────────────────────────────────────"
 echo "Optional: Automatic scheduling"
